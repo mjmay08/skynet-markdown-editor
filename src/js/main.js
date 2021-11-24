@@ -1,9 +1,10 @@
 import Editor from '@toast-ui/editor';
-import { SkynetClient, MySky, Permission, PermCategory, PermType } from "skynet-js";
+import { SkynetClient } from "skynet-js";
 import { FileSystemDAC } from "fs-dac-library";
 import '../scss/index.scss';
 
-let appName = "MarkdownEditor"; //Change to "MarkdownEditor" or localhost for dev
+// Base32 encoded version of resolver skylink
+let appName = "040a97thkkkgrcs38gfvdc8tjntakaiq2uon13j10u7uh911ajffru8";
 
 const editor = new Editor({
   el: document.querySelector('#editor'),
@@ -14,13 +15,13 @@ const editor = new Editor({
 
 const client = new SkynetClient();
 const fileSystemDAC = new FileSystemDAC();
-client.loadMySky(appName, {}).then((mySky) => {
+client.loadMySky().then((mySky) => {
   mySky.loadDacs(fileSystemDAC);
   //mySky.addPermissions(new Permission(mySky.hostDomain, "fs-dac.hns", PermCategory.Hidden, PermType.Read));
   //mySky.addPermissions(new Permission(mySky.hostDomain, "fs-dac.hns", PermCategory.Hidden, PermType.Write));
   //mySky.addPermissions(new Permission(mySky.hostDomain, "fs-dac.hns", PermCategory.Discoverable, PermType.Read));
   //mySky.addPermissions(new Permission(mySky.hostDomain, "fs-dac.hns", PermCategory.Discoverable, PermType.Write));
-  appName = mySky.hostDomain;
+  //appName = mySky.hostDomain;
   mySky.checkLogin();
   const urlParams = new URLSearchParams(window.location.search);
 const existingFileParam = urlParams.get('file');
@@ -28,6 +29,8 @@ if (existingFileParam) {
   console.log(existingFileParam);
   //fileSystemDAC.mountUri(appName + "/Documents", )
 }
+}, (error) => {
+  console.log("Error in loadMySky: " + error);
 });
 
 
@@ -89,18 +92,21 @@ function exportToSkynet(filename) {
   */
   fileSystemDAC.createDirectory(appName, "Documents").then((createDirResponse) => {
     console.log(createDirResponse);
-    fileSystemDAC.uploadFileData(blob).then((fileData) => {
-      console.log(fileData);
-      fileSystemDAC.createFile(appName + "/Documents",
-        filename + ".md",
-        fileData
-      ).then((createFileResponse) => {
-        console.log(createFileResponse);
-        $('#exportToSkynet').popover('dispose');
-      });
-      
-    });
-  });
+    if (createDirResponse.success){
+      fileSystemDAC.uploadFileData(blob).then((fileData) => {
+        console.log(fileData);
+        fileSystemDAC.createFile(appName + "/Documents",
+          filename + ".md",
+          fileData
+        ).then((createFileResponse) => {
+          console.log(createFileResponse);
+          $('#exportToSkynet').popover('dispose');
+        }, (error) => console.log("createFile error: " + error));
+      }, (error) => console.log("uploadFileData error: " + error));
+    } else {
+      console.log("Failed to create dir with FS DAC: " + createDirResponse.error);
+    }
+  }, (error) => console.log('Create directory error: ' + error));
 }
 
 function loadFromSkynet(url) {
@@ -143,6 +149,7 @@ function showLoadFromSkynet() {
     appName + "/Documents"
   ).then((dirIndex) => {
     if (dirIndex === null || dirIndex === undefined || dirIndex.files === null || dirIndex.files === undefined) {
+      console.log("Got dir index, doesn't exist");
       //Directory probably doesn't exist yet.
       $('#loadFromSkynet').popover({
         content: "No files found",
@@ -151,6 +158,7 @@ function showLoadFromSkynet() {
       });
       $('#loadFromSkynet').popover('show');
     } else {
+      console.log("Got dir index, exists");
       const files = Object.keys(dirIndex.files);
       let fileList = document.createElement('ul');
       fileList.id = "fileList"
@@ -177,6 +185,8 @@ function showLoadFromSkynet() {
       });
       $('#loadFromSkynet').popover('show');
     }
+  }, (error) => {
+    console.log("Failed to get dir index: " + error);
   });
   // End New
 
