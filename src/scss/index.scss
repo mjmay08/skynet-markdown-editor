@@ -1,6 +1,7 @@
 //@import 'colors.scss';
 @import 'global.scss';
-
+@import '~bootstrap/scss/bootstrap';
+@import '~@toast-ui/editor/dist/toastui-editor';
 
 /* Table modifications */
 .tabulator-row .tabulator-cell {

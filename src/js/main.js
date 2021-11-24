@@ -1,6 +1,8 @@
 import Editor from '@toast-ui/editor';
 import { SkynetClient } from "skynet-js";
 import { FileSystemDAC } from "fs-dac-library";
+import { Buttons, Popover } from 'bootstrap';
+import { popper } from '@popperjs/core';
 import '../scss/index.scss';
 
 // Base32 encoded version of resolver skylink
@@ -10,18 +12,14 @@ const editor = new Editor({
   el: document.querySelector('#editor'),
   height: '100%',
   initialEditType: 'markdown',
-  previewStyle: 'vertical'
+  previewStyle: 'vertical',
+  usageStatistics: false
 });
 
-const client = new SkynetClient();
+const client = new SkynetClient("https://siasky.net");
 const fileSystemDAC = new FileSystemDAC();
 client.loadMySky().then((mySky) => {
   mySky.loadDacs(fileSystemDAC);
-  //mySky.addPermissions(new Permission(mySky.hostDomain, "fs-dac.hns", PermCategory.Hidden, PermType.Read));
-  //mySky.addPermissions(new Permission(mySky.hostDomain, "fs-dac.hns", PermCategory.Hidden, PermType.Write));
-  //mySky.addPermissions(new Permission(mySky.hostDomain, "fs-dac.hns", PermCategory.Discoverable, PermType.Read));
-  //mySky.addPermissions(new Permission(mySky.hostDomain, "fs-dac.hns", PermCategory.Discoverable, PermType.Write));
-  //appName = mySky.hostDomain;
   mySky.checkLogin();
   const urlParams = new URLSearchParams(window.location.search);
 const existingFileParam = urlParams.get('file');
