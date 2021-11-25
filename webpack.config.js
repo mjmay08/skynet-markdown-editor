@@ -43,6 +43,7 @@ module.exports = {
             patterns: [ 
              { from: './src/favicon.ico' },
              { from: './src/manifest.json' },
+             { from: './src/BuiltWithSkynet.png' },
              { from: './node_modules/jquery/dist/jquery.min.js' }
             ]
         })

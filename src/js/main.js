@@ -16,17 +16,17 @@ const editor = new Editor({
   usageStatistics: false
 });
 
-const client = new SkynetClient("https://siasky.net");
+const client = new SkynetClient();
 const fileSystemDAC = new FileSystemDAC();
 client.loadMySky().then((mySky) => {
-  mySky.loadDacs(fileSystemDAC);
-  mySky.checkLogin();
-  const urlParams = new URLSearchParams(window.location.search);
-const existingFileParam = urlParams.get('file');
-if (existingFileParam) {
-  console.log(existingFileParam);
-  //fileSystemDAC.mountUri(appName + "/Documents", )
-}
+  mySky.loadDacs(fileSystemDAC).then(() => {
+    mySky.checkLogin().then((loggedIn) => {
+      if (loggedIn) {
+        $('#loadingMySkyIndicator').hide();
+        $('#mySkyFunctionButtons').show();
+      }
+    });
+  });
 }, (error) => {
   console.log("Error in loadMySky: " + error);
 });
@@ -90,20 +90,16 @@ function exportToSkynet(filename) {
   */
   fileSystemDAC.createDirectory(appName, "Documents").then((createDirResponse) => {
     console.log(createDirResponse);
-    if (createDirResponse.success){
-      fileSystemDAC.uploadFileData(blob).then((fileData) => {
-        console.log(fileData);
-        fileSystemDAC.createFile(appName + "/Documents",
-          filename + ".md",
-          fileData
-        ).then((createFileResponse) => {
-          console.log(createFileResponse);
-          $('#exportToSkynet').popover('dispose');
-        }, (error) => console.log("createFile error: " + error));
-      }, (error) => console.log("uploadFileData error: " + error));
-    } else {
-      console.log("Failed to create dir with FS DAC: " + createDirResponse.error);
-    }
+    fileSystemDAC.uploadFileData(blob).then((fileData) => {
+      console.log(fileData);
+      fileSystemDAC.createFile(appName + "/Documents",
+        filename + ".md",
+        fileData
+      ).then((createFileResponse) => {
+        console.log(createFileResponse);
+        $('#exportToSkynet').popover('dispose');
+      }, (error) => console.log("createFile error: " + error));
+    }, (error) => console.log("uploadFileData error: " + error));
   }, (error) => console.log('Create directory error: ' + error));
 }
 
@@ -230,11 +226,22 @@ function replaceDownloadButtonWithExportToSkynet() {
   $(toolbarSelector).append(
          `<div class="toastui-editor-toolbar-group">
             <div class="toastui-editor-toolbar-divider"></div>
-            <button class='tui-image-editor-load-skynet-image-btn' id="loadFromSkynet" style="background: none;">
-              <i class="fa fa-folder-open-o fa-2x"></i>
+            <span id="mySkyFunctionButtons" style="display: none;">
+              <button class='tui-image-editor-load-skynet-image-btn' id="loadFromSkynet" style="background: none;">
+                <i class="fa fa-folder-open-o fa-2x"></i>
+              </button>
+              <button class='tui-image-editor-download-image-btn' id="exportToSkynet" style="background: none;">
+                <i class="fa fa-save fa-2x"></i>
+              </button>
+            </span>
+            <button style="background: none; cursor: unset;" id="loadingMySkyIndicator"><i class="fa fa-spinner fa-spin fa-2x"></i></button>
+          </div>
+          <div class="toastui-editor-toolbar-group" style="margin-left: auto;">
+            <button id="skynetDocs" style="background: none; width: unset;">
+              <a href="https://siasky.net/docs" target="_blank"><img src="BuiltWithSkynet.png" style="height: 32px;"></a>
             </button>
-            <button class='tui-image-editor-download-image-btn' id="exportToSkynet" style="background: none;">
-              <i class="fa fa-save fa-2x"></i>
+            <button id="github" style="background: none;">
+              <a href="https://github.com/mjmay08/skynet-markdown-editor" target="_blank"><i class="fa fa-github fa-2x"></i></a>
             </button>
           </div>`
           //<button class='tui-image-editor-download-image-btn' id="shareLink" style="background: none;">
